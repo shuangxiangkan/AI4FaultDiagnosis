@@ -3,13 +3,12 @@
 """
 
 import argparse
-import os
 from topologies import Hypercube
 from models import BPNN
 from diagnosis import PMCDiagnosis
 from data import generate_data, save_dataset, load_dataset
 from evaluation import evaluate
-from utils import setup_logger
+from utils import setup_logger, visualize_syndrome
 
 
 def parse_args():
@@ -26,12 +25,21 @@ def parse_args():
                         help="加载已有数据集（数据集名称）")
     parser.add_argument("--save", type=str, default=None,
                         help="保存数据集（数据集名称）")
+    parser.add_argument("--visualize", type=str, default=None,
+                        help="可视化单个 syndrome 文件路径")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     logger = setup_logger()
+    
+    # 可视化模式
+    if args.visualize:
+        logger.info(f"Visualizing: {args.visualize}")
+        output = visualize_syndrome(args.visualize, args.dimension)
+        logger.info(f"Saved: {output}")
+        return
     
     # 解析参数
     dimension = args.dimension
@@ -57,7 +65,6 @@ def main():
         train_data, val_data, test_data = generate_data(pmc, n_nodes, max_faults, args.n_samples)
         logger.info(f"Train: {len(train_data[0])}, Val: {len(val_data[0])}, Test: {len(test_data[0])}")
         
-        # 保存数据集
         if args.save:
             metadata = {"n_nodes": n_nodes, "max_faults": max_faults, "dimension": dimension}
             path = save_dataset(train_data, val_data, test_data, args.save, metadata)

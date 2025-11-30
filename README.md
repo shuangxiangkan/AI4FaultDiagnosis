@@ -45,18 +45,36 @@ python main.py [OPTIONS]
 | `-e, --epochs` | 训练轮数 | 100 |
 | `--save NAME` | 保存数据集 | - |
 | `--load NAME` | 加载数据集 | - |
+| `--visualize PATH` | 可视化单个 syndrome 文件 | - |
 
 **示例**:
 ```bash
-# 5维超立方体，最多6个故障，5000样本
+# 训练
 python main.py -d 5 -f 6 -n 5000
 
-# 生成并保存数据集
+# 保存数据集
 python main.py -d 4 -n 2000 --save hypercube_4d
 
-# 加载已有数据集训练（可复现）
+# 加载数据集训练（可复现）
 python main.py --load hypercube_4d
+
+# 可视化 syndrome
+python main.py --visualize datasets/my_data/20251130_121054/train/1.npz -d 4
 ```
+
+## 可视化说明
+
+可视化会生成超立方体拓扑图，展示故障诊断情况：
+
+| 元素 | 含义 |
+|-----|------|
+| 🔴 红色节点 | 故障节点 |
+| 🟢 绿色节点 | 正常节点 |
+| 红色虚线 | 测试结果 = 1（检测到故障）|
+| 绿色实线 | 测试结果 = 0（正常）|
+| 灰色点线 | 不可靠（两端都是故障节点）|
+
+节点标签使用二进制格式（如 `0101`），图片保存为 `.png` 文件。
 
 ## 项目结构
 
@@ -76,7 +94,8 @@ AI4FaultDiagnosis/
 ├── evaluation/          # 评估模块
 │   └── metrics.py
 ├── utils/               # 工具模块
-│   └── logger.py
+│   ├── logger.py
+│   └── visualizer.py
 ├── datasets/            # 保存的数据集
 │   └── {name}/{timestamp}/
 │       ├── metadata.json

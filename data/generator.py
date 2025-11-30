@@ -2,17 +2,16 @@
 
 import numpy as np
 import random
-from diagnosis.pmc import PMCDiagnosis
+from topologies.hypercube import Hypercube
 
 
-def generate_data(pmc: PMCDiagnosis, n_nodes: int, max_faults: int, n_samples: int,
+def generate_data(topo: Hypercube, max_faults: int, n_samples: int,
                   split: tuple = (0.8, 0.1, 0.1)):
     """
     生成并划分数据集
     
     Args:
-        pmc: PMC 诊断模型
-        n_nodes: 节点总数
+        topo: 网络拓扑
         max_faults: 最大故障数
         n_samples: 总样本数
         split: (train, val, test) 比例，默认 80/10/10
@@ -23,9 +22,9 @@ def generate_data(pmc: PMCDiagnosis, n_nodes: int, max_faults: int, n_samples: i
     X, Y = [], []
     for _ in range(n_samples):
         n_faults = random.randint(1, max_faults)
-        faulty = set(random.sample(range(n_nodes), n_faults))
-        X.append(pmc.generate_syndrome(faulty))
-        Y.append(np.array([1.0 if i in faulty else 0.0 for i in range(n_nodes)], dtype=np.float32))
+        faulty = set(random.sample(range(topo.n_nodes), n_faults))
+        X.append(topo.generate_PMC_syndrome(faulty))
+        Y.append(np.array([1.0 if i in faulty else 0.0 for i in range(topo.n_nodes)], dtype=np.float32))
     
     X, Y = np.array(X), np.array(Y)
     

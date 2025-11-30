@@ -5,7 +5,6 @@
 import argparse
 from topologies import Hypercube
 from models import BPNN
-from diagnosis import PMCDiagnosis
 from data import generate_data, save_dataset, load_dataset
 from evaluation import evaluate
 from utils import setup_logger, visualize_syndrome
@@ -51,7 +50,6 @@ def main():
     
     # 初始化拓扑
     topo = Hypercube(dimension)
-    pmc = PMCDiagnosis(topo)
     
     # 加载或生成数据
     if args.load:
@@ -62,7 +60,7 @@ def main():
         logger.info(f"Loaded - Train: {len(train_data[0])}, Val: {len(val_data[0])}, Test: {len(test_data[0])}")
     else:
         logger.info(f"Generating data (train/val/test = 80/10/10)...")
-        train_data, val_data, test_data = generate_data(pmc, n_nodes, max_faults, args.n_samples)
+        train_data, val_data, test_data = generate_data(topo, max_faults, args.n_samples)
         logger.info(f"Train: {len(train_data[0])}, Val: {len(val_data[0])}, Test: {len(test_data[0])}")
         
         if args.save:
@@ -73,7 +71,7 @@ def main():
     logger.info(f"Nodes: {n_nodes}, Max faults: {max_faults}")
     
     # 训练
-    model = BPNN(pmc.syndrome_size, n_nodes)
+    model = BPNN(topo.syndrome_size, n_nodes)
     logger.info("Training...")
     model.train(train_data, val_data, args.epochs)
     

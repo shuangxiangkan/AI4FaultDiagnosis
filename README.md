@@ -64,8 +64,6 @@ python main.py --visualize datasets/my_data/20251130_121054/train/1.npz -d 4
 
 ## 可视化说明
 
-可视化会生成超立方体拓扑图，展示故障诊断情况：
-
 | 元素 | 含义 |
 |-----|------|
 | 🔴 红色节点 | 故障节点 |
@@ -74,20 +72,16 @@ python main.py --visualize datasets/my_data/20251130_121054/train/1.npz -d 4
 | 绿色实线 | 测试结果 = 0（正常）|
 | 灰色点线 | 不可靠（两端都是故障节点）|
 
-节点标签使用二进制格式（如 `0101`），图片保存为 `.png` 文件。
-
 ## 项目结构
 
 ```
 AI4FaultDiagnosis/
-├── topologies/          # 网络拓扑
+├── topologies/          # 网络拓扑（含 PMC syndrome 生成）
 │   ├── base.py
 │   └── hypercube.py
 ├── models/              # 诊断模型
 │   ├── base.py
 │   └── bpnn.py
-├── diagnosis/           # 诊断协议
-│   └── pmc.py
 ├── data/                # 数据生成与管理
 │   ├── generator.py
 │   └── dataset.py
@@ -97,11 +91,6 @@ AI4FaultDiagnosis/
 │   ├── logger.py
 │   └── visualizer.py
 ├── datasets/            # 保存的数据集
-│   └── {name}/{timestamp}/
-│       ├── metadata.json
-│       ├── train/1.npz, 2.npz, ...
-│       ├── val/1.npz, 2.npz, ...
-│       └── test/1.npz, 2.npz, ...
 ├── main.py
 └── requirements.txt
 ```
@@ -133,7 +122,10 @@ from .base import BaseTopology
 class Torus(BaseTopology):
     @property
     def n_nodes(self) -> int: ...
+    @property
+    def syndrome_size(self) -> int: ...
     def get_neighbors(self, node: int) -> list: ...
+    def generate_PMC_syndrome(self, faulty_nodes: set): ...
 ```
 
 ### 添加新模型

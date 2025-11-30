@@ -58,8 +58,8 @@ python main.py -d 4 -n 2000 --save hypercube_4d
 # 加载数据集训练（可复现）
 python main.py --load hypercube_4d
 
-# 可视化 syndrome
-python main.py --visualize datasets/my_data/20251130_121054/train/1.npz -d 4
+# 可视化 syndrome（自动从 metadata.json 读取维度）
+python main.py --visualize datasets/my_data/20251130_121054/train/1.npz
 ```
 
 ## 可视化说明

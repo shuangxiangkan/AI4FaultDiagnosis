@@ -1,5 +1,7 @@
 """Syndrome 可视化模块"""
 
+import os
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -11,7 +13,7 @@ def visualize_syndrome(syndrome_path: str, dimension: int = None):
     
     Args:
         syndrome_path: .npz 文件路径
-        dimension: 超立方体维度（如果为 None，则从数据推断）
+        dimension: 超立方体维度（如果为 None，则从 metadata.json 读取）
     """
     # 加载数据
     data = np.load(syndrome_path)
@@ -19,8 +21,20 @@ def visualize_syndrome(syndrome_path: str, dimension: int = None):
     label = data["label"]
     
     n_nodes = len(label)
+    
+    # 自动获取 dimension
     if dimension is None:
-        dimension = int(np.log2(n_nodes))
+        # 尝试从 metadata.json 读取
+        dataset_dir = os.path.dirname(os.path.dirname(syndrome_path))
+        metadata_path = os.path.join(dataset_dir, "metadata.json")
+        if os.path.exists(metadata_path):
+            with open(metadata_path, "r") as f:
+                metadata = json.load(f)
+                dimension = metadata.get("dimension")
+        
+        # 如果还是 None，从节点数推断
+        if dimension is None:
+            dimension = int(np.log2(n_nodes))
     
     # 构建超立方体图
     G = nx.hypercube_graph(dimension)
@@ -31,7 +45,6 @@ def visualize_syndrome(syndrome_path: str, dimension: int = None):
     node_colors = ["#ff6b6b" if i in faulty_nodes else "#69db7c" for i in range(n_nodes)]
     
     # 构建 syndrome 字典：(u, v) -> test_result
-    # 按照 get_all_edges 的顺序：节点 0 的所有邻居，节点 1 的所有邻居，...
     syndrome_dict = {}
     idx = 0
     for u in range(n_nodes):
@@ -40,8 +53,7 @@ def visualize_syndrome(syndrome_path: str, dimension: int = None):
             syndrome_dict[(u, v)] = syndrome[idx]
             idx += 1
     
-    # 对于无向边，取两个方向中可靠的测试结果
-    # 如果 u 无故障，则 u->v 的结果可靠
+    # 对于无向边，取可靠的测试结果
     edge_colors = []
     edge_styles = []
     edges = []
@@ -49,21 +61,19 @@ def visualize_syndrome(syndrome_path: str, dimension: int = None):
     for u in range(n_nodes):
         for bit in range(dimension):
             v = u ^ (1 << bit)
-            if u > v:  # 只处理一次
+            if u > v:
                 continue
             edges.append((u, v))
             
-            # 选择可靠的测试结果
             if u not in faulty_nodes:
                 test_result = syndrome_dict[(u, v)]
             elif v not in faulty_nodes:
                 test_result = syndrome_dict[(v, u)]
             else:
-                # 两个都是故障节点，结果不可靠，用灰色表示
                 test_result = -1
             
             if test_result == -1:
-                edge_colors.append("#adb5bd")  # 灰色
+                edge_colors.append("#adb5bd")
                 edge_styles.append("dotted")
             elif test_result == 1:
                 edge_colors.append("#ff6b6b")
@@ -76,19 +86,15 @@ def visualize_syndrome(syndrome_path: str, dimension: int = None):
     fig, ax = plt.subplots(figsize=(10, 8))
     pos = nx.spring_layout(G, seed=42)
     
-    # 绘制边
     for (u, v), color, style in zip(edges, edge_colors, edge_styles):
         nx.draw_networkx_edges(G, pos, edgelist=[(u, v)], edge_color=color,
                               style=style, width=2, ax=ax)
     
-    # 绘制节点
     nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=800, ax=ax)
     
-    # 二进制标签
     binary_labels = {i: format(i, f'0{dimension}b') for i in range(n_nodes)}
     nx.draw_networkx_labels(G, pos, labels=binary_labels, font_size=8, font_weight="bold", ax=ax)
     
-    # 图例
     from matplotlib.lines import Line2D
     faulty_binary = {format(i, f'0{dimension}b') for i in faulty_nodes}
     legend = [

@@ -1,41 +1,36 @@
 """模型评估模块"""
 
 import numpy as np
-import random
 from models.base import BaseModel
-from diagnosis.pmc import PMCDiagnosis
 
 
-def evaluate(model: BaseModel, pmc: PMCDiagnosis, n_nodes: int, max_faults: int, n_tests: int = 1000):
+def evaluate(model: BaseModel, test_data: tuple) -> dict:
     """
-    评估模型性能
+    在测试集上评估模型
     
-    指标说明：
-    - Accuracy: 完全正确识别所有故障节点的比例
-    - Precision: 预测为故障的节点中，真正故障的比例
-    - Recall: 真正故障的节点中，被正确预测的比例
+    Args:
+        model: 训练好的模型
+        test_data: (X_test, Y_test)
+        
+    Returns:
+        包含 accuracy, precision, recall 的字典
     """
+    X_test, Y_test = test_data
     correct, total_prec, total_rec = 0, 0, 0
     
-    for _ in range(n_tests):
-        # 随机生成故障
-        n_faults = random.randint(1, max_faults)
-        actual = set(random.sample(range(n_nodes), n_faults))
+    for x, y in zip(X_test, Y_test):
+        actual = set(np.where(y == 1)[0])
+        pred = set(np.where(model.predict(x) > 0.5)[0])
         
-        # 模型预测（概率 > 0.5 判定为故障）
-        syndrome = pmc.generate_syndrome(actual)
-        pred = set(np.where(model.predict(syndrome) > 0.5)[0])
-        
-        # 计算指标
         if pred == actual:
             correct += 1
         
         total_prec += len(pred & actual) / len(pred) if pred else 0
         total_rec += len(pred & actual) / len(actual) if actual else 1
     
+    n = len(X_test)
     return {
-        "accuracy": correct / n_tests,
-        "precision": total_prec / n_tests,
-        "recall": total_rec / n_tests
+        "accuracy": correct / n,
+        "precision": total_prec / n,
+        "recall": total_rec / n
     }
-

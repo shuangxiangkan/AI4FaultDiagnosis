@@ -15,48 +15,47 @@
 
 ## 快速开始
 
-### 1. 克隆项目
-
 ```bash
+# 1. 克隆 & 进入项目
 git clone https://github.com/your-repo/AI4FaultDiagnosis.git
 cd AI4FaultDiagnosis
-```
 
-### 2. 创建虚拟环境
-
-```bash
+# 2. 创建虚拟环境
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
-```
 
-### 3. 安装依赖
-
-```bash
+# 3. 安装依赖
 pip install -r requirements.txt
-```
 
-### 4. 运行
-
-```bash
+# 4. 运行
 python main.py
 ```
 
-输出示例：
+## 命令行参数
+
+```bash
+python main.py [OPTIONS]
 ```
-=== BPNN Fault Diagnosis for 4-D Hypercube ===
-Nodes: 16, Max faults: 4
 
-Generating 20000 samples and training...
-Epoch [20/100] Train: 0.0732, Val: 0.0194
-...
-Epoch [100/100] Train: 0.0338, Val: 0.0064
+| 参数 | 说明 | 默认值 |
+|-----|------|-------|
+| `-d, --dimension` | 超立方体维度（节点数 = 2^d） | 4 |
+| `-f, --faults` | 故障数（整数）或故障率（小数） | 0.25 |
+| `-n, --n_samples` | 总样本数 | 1000 |
+| `-e, --epochs` | 训练轮数 | 100 |
+| `--save NAME` | 保存数据集 | - |
+| `--load NAME` | 加载数据集 | - |
 
-Evaluating on 1000 test cases...
+**示例**:
+```bash
+# 5维超立方体，最多6个故障，5000样本
+python main.py -d 5 -f 6 -n 5000
 
-=== Results ===
-Accuracy: 99.00%
-Precision: 99.98%
-Recall: 99.78%
+# 生成并保存数据集
+python main.py -d 4 -n 2000 --save hypercube_4d
+
+# 加载已有数据集训练（可复现）
+python main.py --load hypercube_4d
 ```
 
 ## 项目结构
@@ -64,15 +63,28 @@ Recall: 99.78%
 ```
 AI4FaultDiagnosis/
 ├── topologies/          # 网络拓扑
-│   ├── base.py          # 抽象基类
-│   └── hypercube.py     # 超立方体
+│   ├── base.py
+│   └── hypercube.py
 ├── models/              # 诊断模型
-│   ├── base.py          # 抽象基类
-│   └── bpnn.py          # BPNN
+│   ├── base.py
+│   └── bpnn.py
 ├── diagnosis/           # 诊断协议
-│   └── pmc.py           # PMC 模型
-├── main.py              # 主程序
-└── requirements.txt     # 依赖
+│   └── pmc.py
+├── data/                # 数据生成与管理
+│   ├── generator.py
+│   └── dataset.py
+├── evaluation/          # 评估模块
+│   └── metrics.py
+├── utils/               # 工具模块
+│   └── logger.py
+├── datasets/            # 保存的数据集
+│   └── {name}/{timestamp}/
+│       ├── metadata.json
+│       ├── train/1.npz, 2.npz, ...
+│       ├── val/1.npz, 2.npz, ...
+│       └── test/1.npz, 2.npz, ...
+├── main.py
+└── requirements.txt
 ```
 
 ## 核心概念
@@ -91,17 +103,6 @@ AI4FaultDiagnosis/
 - 每个节点有 N 个邻居
 - 节点编号的二进制表示只差一位即为邻居
 
-## 参数配置
-
-修改 `main.py` 中的参数：
-
-```python
-dimension = 4       # 超立方体维度（节点数 = 2^4 = 16）
-max_faults = 4      # 最大故障数
-n_samples = 20000   # 训练样本数
-epochs = 100        # 训练轮数
-```
-
 ## 扩展指南
 
 ### 添加新拓扑
@@ -111,15 +112,9 @@ epochs = 100        # 训练轮数
 from .base import BaseTopology
 
 class Torus(BaseTopology):
-    def __init__(self, rows: int, cols: int):
-        ...
-    
     @property
-    def n_nodes(self) -> int:
-        ...
-    
-    def get_neighbors(self, node: int) -> list:
-        ...
+    def n_nodes(self) -> int: ...
+    def get_neighbors(self, node: int) -> list: ...
 ```
 
 ### 添加新模型
@@ -129,11 +124,8 @@ class Torus(BaseTopology):
 from .base import BaseModel
 
 class GNN(BaseModel):
-    def train(self, X, Y, epochs):
-        ...
-    
-    def predict(self, x):
-        ...
+    def train(self, train_data, val_data, epochs): ...
+    def predict(self, x): ...
 ```
 
 ## License

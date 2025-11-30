@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from .base import BaseModel
+from utils import get_logger
 
 
 class BPNN(BaseModel):
@@ -58,6 +59,8 @@ class BPNN(BaseModel):
             batch_size: 批次大小
             val_ratio: 验证集比例（默认 10%）
         """
+        logger = get_logger()
+        
         # ===== 1. 划分训练集和验证集 =====
         n = len(X)
         idx = np.random.permutation(n)  # 随机打乱索引
@@ -98,7 +101,7 @@ class BPNN(BaseModel):
             
             # 每 20 轮打印一次
             if (epoch + 1) % 20 == 0:
-                print(f"Epoch [{epoch+1}/{epochs}] Train: {train_loss/len(train_loader):.4f}, Val: {val_loss:.4f}")
+                logger.info(f"Epoch [{epoch+1}/{epochs}] Train: {train_loss/len(train_loader):.4f}, Val: {val_loss:.4f}")
     
     def predict(self, x: np.ndarray) -> np.ndarray:
         """预测节点故障概率"""

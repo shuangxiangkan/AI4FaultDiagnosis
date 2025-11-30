@@ -10,17 +10,21 @@ from models import BPNN
 from diagnosis import PMCDiagnosis
 from data import generate_data
 from evaluation import evaluate
+from utils import setup_logger
 
 
 def main():
+    # ===== 初始化日志 =====
+    logger = setup_logger()
+    
     # ===== 配置参数 =====
     dimension = 4       # 超立方体维度（节点数 = 2^4 = 16）
     max_faults = 4      # 最大故障数（t-diagnosable）
     n_samples = 20000   # 训练样本数
     epochs = 100        # 训练轮数
     
-    print(f"=== BPNN Fault Diagnosis for {dimension}-D Hypercube ===")
-    print(f"Nodes: {2**dimension}, Max faults: {max_faults}\n")
+    logger.info(f"=== BPNN Fault Diagnosis for {dimension}-D Hypercube ===")
+    logger.info(f"Nodes: {2**dimension}, Max faults: {max_faults}")
     
     # ===== 初始化 =====
     topo = Hypercube(dimension)           # 创建超立方体拓扑
@@ -28,18 +32,18 @@ def main():
     model = BPNN(pmc.syndrome_size, topo.n_nodes)  # 创建神经网络
     
     # ===== 训练 =====
-    print(f"Generating {n_samples} samples and training...")
+    logger.info(f"Generating {n_samples} samples and training...")
     X, Y = generate_data(pmc, topo.n_nodes, max_faults, n_samples)
     model.train(X, Y, epochs)
     
     # ===== 测试 =====
-    print("\nEvaluating on 1000 test cases...")
+    logger.info("Evaluating on 1000 test cases...")
     results = evaluate(model, pmc, topo.n_nodes, max_faults)
     
-    print(f"\n=== Results ===")
-    print(f"Accuracy: {results['accuracy']*100:.2f}%")
-    print(f"Precision: {results['precision']*100:.2f}%")
-    print(f"Recall: {results['recall']*100:.2f}%")
+    logger.info("=== Results ===")
+    logger.info(f"Accuracy: {results['accuracy']*100:.2f}%")
+    logger.info(f"Precision: {results['precision']*100:.2f}%")
+    logger.info(f"Recall: {results['recall']*100:.2f}%")
 
 
 if __name__ == "__main__":
